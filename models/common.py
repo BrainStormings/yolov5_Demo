@@ -1108,11 +1108,14 @@ class Classify(nn.Module):
         if isinstance(x, list):
             x = torch.cat(x, 1)
         return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
-'''
-添加CoordConv模块
-'''
-class AddCoords(nn.Module):
 
+
+"""
+添加CoordConv模块
+"""
+
+
+class AddCoords(nn.Module):
     def __init__(self, with_r=False):
         super().__init__()
         self.with_r = with_r
@@ -1120,7 +1123,7 @@ class AddCoords(nn.Module):
     def forward(self, input_tensor):
         """
         Args:
-            input_tensor: shape(batch, channel, x_dim, y_dim)
+            input_tensor: shape(batch, channel, x_dim, y_dim).
         """
         batch_size, _, x_dim, y_dim = input_tensor.size()
 
@@ -1136,20 +1139,19 @@ class AddCoords(nn.Module):
         xx_channel = xx_channel.repeat(batch_size, 1, 1, 1).transpose(2, 3)
         yy_channel = yy_channel.repeat(batch_size, 1, 1, 1).transpose(2, 3)
 
-        ret = torch.cat([
-            input_tensor,
-            xx_channel.type_as(input_tensor),
-            yy_channel.type_as(input_tensor)], dim=1)
+        ret = torch.cat([input_tensor, xx_channel.type_as(input_tensor), yy_channel.type_as(input_tensor)], dim=1)
 
         if self.with_r:
-            rr = torch.sqrt(torch.pow(xx_channel.type_as(input_tensor) - 0.5, 2) + torch.pow(yy_channel.type_as(input_tensor) - 0.5, 2))
+            rr = torch.sqrt(
+                torch.pow(xx_channel.type_as(input_tensor) - 0.5, 2)
+                + torch.pow(yy_channel.type_as(input_tensor) - 0.5, 2)
+            )
             ret = torch.cat([ret, rr], dim=1)
 
         return ret
 
 
 class CoordConv(nn.Module):
-
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, with_r=False):
         super().__init__()
         self.addcoords = AddCoords(with_r=with_r)
