@@ -1,19 +1,21 @@
 import torch
 import torch.nn as nn
 
-'''
+"""
 不需要接受通道数的注意力机制，修改简单
-'''
+"""
+
+
 class SimAM(torch.nn.Module):
     def __init__(self, e_lambda=1e-4):
-        super(SimAM, self).__init__()
+        super().__init__()
 
         self.activaton = nn.Sigmoid()
         self.e_lambda = e_lambda
 
     def __repr__(self):
-        s = self.__class__.__name__ + '('
-        s += ('lambda=%f)' % self.e_lambda)
+        s = self.__class__.__name__ + "("
+        s += f"lambda={self.e_lambda:f})"
         return s
 
     @staticmethod
@@ -21,7 +23,7 @@ class SimAM(torch.nn.Module):
         return "simam"
 
     def forward(self, x):
-        b, c, h, w = x.size()
+        _b, _c, h, w = x.size()
 
         n = w * h - 1
 
@@ -29,4 +31,3 @@ class SimAM(torch.nn.Module):
         y = x_minus_mu_square / (4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda)) + 0.5
 
         return x * self.activaton(y)
-
