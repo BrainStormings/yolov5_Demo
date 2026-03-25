@@ -104,27 +104,27 @@ class QFocalLoss(nn.Module):
         else:  # 'none'
             return loss
 
-#针对小目标的NWD改进
+
+# 针对小目标的NWD改进
 def wasserstein_loss(pred, target, eps=1e-7, constant=12.8):
     """
     Args:
-        pred (Tensor): Predicted bboxes of format (x_center, y_center, w, h),
-            shape (n, 4).
+        pred (Tensor): Predicted bboxes of format (x_center, y_center, w, h), shape (n, 4).
         target (Tensor): Corresponding gt bboxes, shape (n, 4).
         eps (float): Eps to avoid log(0).
-    Return:
+
+    Returns:
         Tensor: Loss tensor.
     """
-
     center1 = pred[:, :2]
     center2 = target[:, :2]
 
     whs = center1[:, :2] - center2[:, :2]
 
-    center_distance = whs[:, 0] * whs[:, 0] + whs[:, 1] * whs[:, 1] + eps #
+    center_distance = whs[:, 0] * whs[:, 0] + whs[:, 1] * whs[:, 1] + eps  #
 
-    w1 = pred[:, 2]  + eps
-    h1 = pred[:, 3]  + eps
+    w1 = pred[:, 2] + eps
+    h1 = pred[:, 3] + eps
     w2 = target[:, 2] + eps
     h2 = target[:, 3] + eps
 
@@ -189,23 +189,23 @@ class ComputeLoss:
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
 
-                nwd = wasserstein_loss(pbox, tbox[i]).squeeze() #使用nwd
-                iou_ratio = 0 #设置系数来平衡iou和nwd
-                '''
+                nwd = wasserstein_loss(pbox, tbox[i]).squeeze()  # 使用nwd
+                iou_ratio = 0  # 设置系数来平衡iou和nwd
+                """
                 关于我引入iou_ratio参数的解释
                 对于数据集都是小目标的检测，我将它设置为0，效果更好，此时只是用nwd参数
                 即iou_ratio越小，nwd参与iou的计算值影响更大，对于小目标检测更好
-                '''
+                """
                 lbox += (1 - iou_ratio) * (1.0 - nwd).mean() + iou_ratio * (1.0 - iou).mean()  # iou loss
 
                 # Objectness
                 iou = (iou.detach() * iou_ratio + nwd.detach() * (1 - iou_ratio)).clamp(0, 1).type(tobj.dtype)
-                '''
+                """
                 关于此处iou的转换说明
                 原始公式会进行值域的控制clamp(0)
                 而我改成clamp(0, 1)，即0~1，是由于发现了return torch.exp(-torch.sqrt(wasserstein_2) / constant)值
                 大部分值取不到靠近0的部分，而是靠近0.65~0.75的取值，此处进行限制小于1，避免大于1的可能
-                '''
+                """
                 if self.sort_obj_iou:
                     j = iou.argsort()
                     b, a, gj, gi, iou = b[j], a[j], gj[j], gi[j], iou[j]
