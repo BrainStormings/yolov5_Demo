@@ -1,18 +1,5 @@
 markdown
 <div align="center">
-  <p>
-    <img width="100%" src="https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-yolov8.png" alt="项目横幅">
-  </p>
-
-[中文](README.zh-CN.md) | [English](README.md)
-
-<div>
-    <a href="https://github.com/your-username/your-repo-name/actions"><img src="https://img.shields.io/badge/Status-Active-brightgreen" alt="项目状态"></a>
-    <a href="https://github.com/your-username/your-repo-name/blob/main/LICENSE"><img src="https://img.shields.io/github/license/your-username/your-repo-name" alt="许可证"></a>
-    <a href="https://github.com/your-username/your-repo-name"><img src="https://img.shields.io/github/stars/your-username/your-repo-name?style=social" alt="GitHub stars"></a>
-</div>
-  <br>
-
 # 基于改进 YOLOv5 的红外小目标检测系统 🚀
 
 本项目针对红外图像中小目标检测的难点（尺寸小、对比度低、背景复杂），对 YOLOv5 模型进行了**多策略融合改进**，显著提升了检测精度和鲁棒性。同时，项目提供了一个**基于 Tkinter 的可视化交互界面**，方便用户进行模型推理和结果分析。
