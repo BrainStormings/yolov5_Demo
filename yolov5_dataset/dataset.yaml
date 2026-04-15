@@ -7,4 +7,4 @@ val: images/val
 test: images/test
 
 nc: 1
-names: ['object']
+names: ["object"]

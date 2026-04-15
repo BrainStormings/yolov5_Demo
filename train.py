@@ -1,7 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """
 Train a YOLOv5 model on a custom dataset. Models and datasets download automatically from the latest YOLOv5 release.
-我的 python train.py --batch-size 16 --epochs 200 --data yolov5_dataset/dataset.yaml --weights yolov5s.pt
+我的 python train.py --batch-size 16 --epochs 200 --data yolov5_dataset/dataset.yaml --weights yolov5s.pt.
 
 Usage - Single-GPU training:
     $ python train.py --data coco128.yaml --weights yolov5s.pt --img 640  # from pretrained (recommended)
@@ -61,7 +61,6 @@ from utils.general import (
     check_amp,
     check_dataset,
     check_file,
-    check_git_info,
     check_git_status,
     check_img_size,
     check_requirements,
