@@ -1,34 +1,36 @@
-import os
-import cv2
-import numpy as np
-import shutil
-import random
-from pathlib import Path
-from tqdm import tqdm
+from __future__ import annotations
+
 import argparse
 import json
-import yaml
-from typing import List, Tuple, Dict, Optional, Union
+import random
+import shutil
 import warnings
+from pathlib import Path
 
-warnings.filterwarnings('ignore')
+import cv2
+import numpy as np
+import yaml
+from tqdm import tqdm
+
+warnings.filterwarnings("ignore")
 
 
 class YOLOv5DatasetProcessor:
-    """YOLOv5数据集处理器：将配对图像和掩码转换为YOLOv5格式"""
+    """YOLOv5数据集处理器：将配对图像和掩码转换为YOLOv5格式."""
 
-    def __init__(self,
-                 images_dir: Union[str, Path],
-                 masks_dir: Union[str, Path],
-                 output_dir: Union[str, Path] = "yolov5_dataset",
-                 class_names: Optional[List[str]] = None,
-                 train_ratio: float = 0.7,
-                 val_ratio: float = 0.2,
-                 test_ratio: float = 0.1,
-                 img_ext: str = ".png",
-                 mask_ext: str = ".png"):
-        """
-        初始化处理器
+    def __init__(
+        self,
+        images_dir: str | Path,
+        masks_dir: str | Path,
+        output_dir: str | Path = "yolov5_dataset",
+        class_names: list[str] | None = None,
+        train_ratio: float = 0.7,
+        val_ratio: float = 0.2,
+        test_ratio: float = 0.1,
+        img_ext: str = ".png",
+        mask_ext: str = ".png",
+    ):
+        """初始化处理器.
 
         Args:
             images_dir: 原始图像目录
@@ -52,22 +54,22 @@ class YOLOv5DatasetProcessor:
 
         self._validate_ratios()
 
-        self.img_ext = img_ext if img_ext.startswith('.') else f'.{img_ext}'
-        self.mask_ext = mask_ext if mask_ext.startswith('.') else f'.{mask_ext}'
+        self.img_ext = img_ext if img_ext.startswith(".") else f".{img_ext}"
+        self.mask_ext = mask_ext if mask_ext.startswith(".") else f".{mask_ext}"
         self.class_id_map = {name: idx for idx, name in enumerate(self.class_names)}
 
         self.stats = {
-            'total_images': 0,
-            'total_instances': 0,
-            'class_distribution': {},
-            'split_counts': {'train': 0, 'val': 0, 'test': 0}
+            "total_images": 0,
+            "total_instances": 0,
+            "class_distribution": {},
+            "split_counts": {"train": 0, "val": 0, "test": 0},
         }
 
         self._create_directory_structure()
         self._print_init_info()
 
     def _print_init_info(self):
-        """打印初始化信息"""
+        """打印初始化信息."""
         print("初始化完成:")
         print(f"  图像目录: {self.images_dir}")
         print(f"  掩码目录: {self.masks_dir}")
@@ -76,9 +78,9 @@ class YOLOv5DatasetProcessor:
         print(f"  数据集划分: 训练{self.train_ratio:.0%}/验证{self.val_ratio:.0%}/测试{self.test_ratio:.0%}")
 
     def _validate_ratios(self):
-        """验证划分比例合理性"""
+        """验证划分比例合理性."""
         ratios = [self.train_ratio, self.val_ratio, self.test_ratio]
-        ratio_names = ['训练集', '验证集', '测试集']
+        ratio_names = ["训练集", "验证集", "测试集"]
 
         for ratio, name in zip(ratios, ratio_names):
             if not 0 <= ratio <= 1:
@@ -88,22 +90,19 @@ class YOLOv5DatasetProcessor:
             raise ValueError(f"划分比例总和应为1.0，当前为{sum(ratios):.3f}")
 
     def _create_directory_structure(self):
-        """创建YOLOv5标准目录结构"""
-        dirs = [
-            "images/train", "images/val", "images/test",
-            "labels/train", "labels/val", "labels/test"
-        ]
+        """创建YOLOv5标准目录结构."""
+        dirs = ["images/train", "images/val", "images/test", "labels/train", "labels/val", "labels/test"]
 
         for dir_path in dirs:
             (self.output_dir / dir_path).mkdir(parents=True, exist_ok=True)
 
-    def _find_paired_files(self) -> List[Tuple[Path, Path]]:
-        """查找配对的图像和掩码文件"""
+    def _find_paired_files(self) -> list[tuple[Path, Path]]:
+        """查找配对的图像和掩码文件."""
         # 查找图像文件
-        common_exts = ['.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff']
+        common_exts = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"]
         image_files = []
 
-        for ext in [self.img_ext] + common_exts:
+        for ext in [self.img_ext, *common_exts]:
             image_files = list(self.images_dir.glob(f"*{ext}"))
             if image_files:
                 self.img_ext = ext
@@ -135,9 +134,8 @@ class YOLOv5DatasetProcessor:
         print(f"成功匹配 {len(paired_files)} 对图像-掩码文件")
         return paired_files
 
-    def _mask_to_bbox(self, mask_path: Path, min_area: int = 4) -> List[List[float]]:
-        """
-        将掩码转换为YOLOv5边界框
+    def _mask_to_bbox(self, mask_path: Path, min_area: int = 4) -> list[list[float]]:
+        """将掩码转换为YOLOv5边界框.
 
         Args:
             mask_path: 掩码文件路径
@@ -180,8 +178,8 @@ class YOLOv5DatasetProcessor:
                 bboxes.append([0, x_center, y_center, norm_w, norm_h])
 
                 # 更新统计信息
-                self.stats['total_instances'] += 1
-                self.stats['class_distribution'][0] = self.stats['class_distribution'].get(0, 0) + 1
+                self.stats["total_instances"] += 1
+                self.stats["class_distribution"][0] = self.stats["class_distribution"].get(0, 0) + 1
 
             return bboxes
 
@@ -189,8 +187,8 @@ class YOLOv5DatasetProcessor:
             print(f"掩码转换错误 {mask_path}: {e}")
             return []
 
-    def _split_dataset(self, paired_files: List[Tuple[Path, Path]], seed: int = 42) -> Dict[str, List]:
-        """随机划分数据集为训练/验证/测试集"""
+    def _split_dataset(self, paired_files: list[tuple[Path, Path]], seed: int = 42) -> dict[str, list]:
+        """随机划分数据集为训练/验证/测试集."""
         random.seed(seed)
         np.random.seed(seed)
 
@@ -201,13 +199,9 @@ class YOLOv5DatasetProcessor:
         train_end = int(total * self.train_ratio)
         val_end = train_end + int(total * self.val_ratio)
 
-        splits = {
-            'train': shuffled[:train_end],
-            'val': shuffled[train_end:val_end],
-            'test': shuffled[val_end:]
-        }
+        splits = {"train": shuffled[:train_end], "val": shuffled[train_end:val_end], "test": shuffled[val_end:]}
 
-        if not splits['train']:
+        if not splits["train"]:
             raise ValueError("训练集为空，请检查数据集划分比例")
 
         print(f"\n数据集划分完成 (种子={seed}):")
@@ -216,8 +210,8 @@ class YOLOv5DatasetProcessor:
 
         return splits
 
-    def process_split(self, split_name: str, file_pairs: List[Tuple[Path, Path]]):
-        """处理单个数据集划分"""
+    def process_split(self, split_name: str, file_pairs: list[tuple[Path, Path]]):
+        """处理单个数据集划分."""
         print(f"\n处理 {split_name} 集...")
 
         processed = 0
@@ -233,10 +227,10 @@ class YOLOv5DatasetProcessor:
                 # 保存标签文件
                 if bboxes:
                     label_path = self.output_dir / "labels" / split_name / f"{img_file.stem}.txt"
-                    with open(label_path, 'w') as f:
+                    with open(label_path, "w") as f:
                         for bbox in bboxes:
-                            line = ' '.join(f'{x:.6f}' if isinstance(x, float) else str(x) for x in bbox)
-                            f.write(line + '\n')
+                            line = " ".join(f"{x:.6f}" if isinstance(x, float) else str(x) for x in bbox)
+                            f.write(line + "\n")
 
                 processed += 1
 
@@ -244,53 +238,53 @@ class YOLOv5DatasetProcessor:
                 print(f"处理文件 {img_file} 时出错: {e}")
                 continue
 
-        self.stats['split_counts'][split_name] = processed
+        self.stats["split_counts"][split_name] = processed
         print(f"  {split_name}集完成: {processed} 张图像")
 
     def _save_dataset_config(self):
-        """保存数据集配置文件"""
-        self.stats['total_images'] = sum(self.stats['split_counts'].values())
+        """保存数据集配置文件."""
+        self.stats["total_images"] = sum(self.stats["split_counts"].values())
 
         # YAML配置
         yaml_config = {
-            'path': str(self.output_dir.absolute()),
-            'train': 'images/train',
-            'val': 'images/val',
-            'test': 'images/test',
-            'names': self.class_names,
-            'nc': len(self.class_names)
+            "path": str(self.output_dir.absolute()),
+            "train": "images/train",
+            "val": "images/val",
+            "test": "images/test",
+            "names": self.class_names,
+            "nc": len(self.class_names),
         }
 
         yaml_path = self.output_dir / "dataset.yaml"
-        with open(yaml_path, 'w', encoding='utf-8') as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("# YOLOv5红外小目标检测数据集配置\n\n")
             yaml.dump(yaml_config, f, default_flow_style=False, allow_unicode=True)
 
         # JSON详细信息
         json_config = {
-            'dataset_info': {
-                'name': self.output_dir.name,
-                'images_dir': str(self.images_dir),
-                'masks_dir': str(self.masks_dir),
-                'total_images': self.stats['total_images'],
-                'total_instances': self.stats['total_instances'],
-                'splits': self.stats['split_counts'],
-                'class_distribution': self.stats['class_distribution']
+            "dataset_info": {
+                "name": self.output_dir.name,
+                "images_dir": str(self.images_dir),
+                "masks_dir": str(self.masks_dir),
+                "total_images": self.stats["total_images"],
+                "total_instances": self.stats["total_instances"],
+                "splits": self.stats["split_counts"],
+                "class_distribution": self.stats["class_distribution"],
             },
-            'classes': self.class_names,
-            'file_extensions': {'images': self.img_ext, 'masks': self.mask_ext}
+            "classes": self.class_names,
+            "file_extensions": {"images": self.img_ext, "masks": self.mask_ext},
         }
 
         json_path = self.output_dir / "dataset_info.json"
-        with open(json_path, 'w', encoding='utf-8') as f:
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(json_config, f, indent=2, ensure_ascii=False)
 
-        print(f"\n配置文件已保存:")
+        print("\n配置文件已保存:")
         print(f"  YAML: {yaml_path}")
         print(f"  JSON: {json_path}")
 
     def _print_statistics(self):
-        """打印数据集统计信息"""
+        """打印数据集统计信息."""
         print("\n" + "=" * 50)
         print("数据集统计信息")
         print("=" * 50)
@@ -298,28 +292,28 @@ class YOLOv5DatasetProcessor:
         print(f"图像总数: {self.stats['total_images']}")
         print(f"目标总数: {self.stats['total_instances']}")
 
-        print(f"\n数据集划分:")
-        for split, count in self.stats['split_counts'].items():
-            if self.stats['total_images'] > 0:
-                ratio = count / self.stats['total_images']
+        print("\n数据集划分:")
+        for split, count in self.stats["split_counts"].items():
+            if self.stats["total_images"] > 0:
+                ratio = count / self.stats["total_images"]
                 print(f"  {split}: {count} 张图像 ({ratio:.1%})")
 
-        if self.stats['class_distribution']:
-            print(f"\n类别分布:")
-            for class_id, count in self.stats['class_distribution'].items():
+        if self.stats["class_distribution"]:
+            print("\n类别分布:")
+            for class_id, count in self.stats["class_distribution"].items():
                 class_name = self.class_names[class_id] if class_id < len(self.class_names) else f"类别{class_id}"
-                if self.stats['total_instances'] > 0:
-                    ratio = count / self.stats['total_instances']
+                if self.stats["total_instances"] > 0:
+                    ratio = count / self.stats["total_instances"]
                     print(f"  {class_name}: {count} 个目标 ({ratio:.1%})")
 
-        if self.stats['total_images'] > 0:
-            avg = self.stats['total_instances'] / self.stats['total_images']
+        if self.stats["total_images"] > 0:
+            avg = self.stats["total_instances"] / self.stats["total_images"]
             print(f"\n平均每张图像的目标数: {avg:.2f}")
 
         print("=" * 50)
 
     def process_dataset(self, seed: int = 42):
-        """处理整个数据集的主流程"""
+        """处理整个数据集的主流程."""
         print(f"\n开始处理红外小目标数据集 (种子={seed})...")
 
         try:
@@ -337,7 +331,7 @@ class YOLOv5DatasetProcessor:
             self._save_dataset_config()
             self._print_statistics()
 
-            print(f"\n✅ 数据集处理完成!")
+            print("\n✅ 数据集处理完成!")
             print(f"输出目录: {self.output_dir}")
 
         except Exception as e:
@@ -346,31 +340,22 @@ class YOLOv5DatasetProcessor:
 
 
 def main():
-    """命令行主函数"""
+    """命令行主函数."""
     parser = argparse.ArgumentParser(
-        description='YOLOv5红外小目标数据集处理器',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description="YOLOv5红外小目标数据集处理器", formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # 必需参数
-    parser.add_argument('--images-dir', type=str, required=True,
-                        help='原始图像文件夹路径')
-    parser.add_argument('--masks-dir', type=str, required=True,
-                        help='掩码图像文件夹路径')
+    parser.add_argument("--images-dir", type=str, required=True, help="原始图像文件夹路径")
+    parser.add_argument("--masks-dir", type=str, required=True, help="掩码图像文件夹路径")
 
     # 可选参数
-    parser.add_argument('--output-dir', type=str, default='yolov5_dataset',
-                        help='输出目录 (默认: yolov5_dataset)')
-    parser.add_argument('--classes', type=str, nargs='+', default=['target'],
-                        help='类别名称列表 (默认: ["target"])')
-    parser.add_argument('--train-ratio', type=float, default=0.7,
-                        help='训练集比例 (默认: 0.7)')
-    parser.add_argument('--val-ratio', type=float, default=0.2,
-                        help='验证集比例 (默认: 0.2)')
-    parser.add_argument('--test-ratio', type=float, default=0.1,
-                        help='测试集比例 (默认: 0.1)')
-    parser.add_argument('--seed', type=int, default=42,
-                        help='随机种子 (默认: 42)')
+    parser.add_argument("--output-dir", type=str, default="yolov5_dataset", help="输出目录 (默认: yolov5_dataset)")
+    parser.add_argument("--classes", type=str, nargs="+", default=["target"], help='类别名称列表 (默认: ["target"])')
+    parser.add_argument("--train-ratio", type=float, default=0.7, help="训练集比例 (默认: 0.7)")
+    parser.add_argument("--val-ratio", type=float, default=0.2, help="验证集比例 (默认: 0.2)")
+    parser.add_argument("--test-ratio", type=float, default=0.1, help="测试集比例 (默认: 0.1)")
+    parser.add_argument("--seed", type=int, default=42, help="随机种子 (默认: 42)")
 
     args = parser.parse_args()
 
@@ -386,7 +371,7 @@ def main():
             class_names=args.classes,
             train_ratio=args.train_ratio,
             val_ratio=args.val_ratio,
-            test_ratio=args.test_ratio
+            test_ratio=args.test_ratio,
         )
 
         processor.process_dataset(seed=args.seed)
@@ -398,6 +383,7 @@ def main():
         print("2. 确保文件名匹配")
         print("3. 检查文件格式")
         import traceback
+
         traceback.print_exc()
 
 
